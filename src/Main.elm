@@ -1,4 +1,4 @@
-module Main exposing (Model, Msg(..), init, inputField, logo, main, update, view)
+module Main exposing (Model, Msg(..), init, logo, main, update, view)
 
 import Angle exposing (Angle)
 import Browser
@@ -171,19 +171,6 @@ mySlider input =
         , thumb = Input.defaultThumb
         , step = Nothing
         }
-
-
-inputField : String -> String -> (String -> Msg) -> Html Msg
-inputField label value msg =
-    Html.div []
-        [ Html.label [] [ Html.text label ]
-        , Html.input
-            [ Html.Attributes.type_ "text"
-            , Html.Attributes.value value
-            , Events.onInput msg
-            ]
-            []
-        ]
 
 
 logo : Model -> Html Msg
