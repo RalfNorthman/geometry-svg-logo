@@ -2,7 +2,8 @@ module Main exposing (Model, Msg(..), init, logo, main, update, view)
 
 import Angle exposing (Angle)
 import Browser
-import Element exposing (..)
+import Color
+import Element exposing (Element)
 import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
@@ -11,14 +12,14 @@ import Frame2d
 import Frame3d
 import Geometry.Svg as Svg
 import Html exposing (Html)
-import Html.Attributes
-import Html.Events as Events
 import Point2d
 import Point3d
 import Polygon2d
 import Quantity
 import Svg exposing (Svg)
-import Svg.Attributes
+import TypedSvg.Attributes
+import TypedSvg.Attributes.InPx
+import TypedSvg.Types exposing (..)
 
 
 type alias Model =
@@ -87,9 +88,12 @@ update msg model =
 
 view : Model -> Html Msg
 view model =
-    layout [] <|
-        column
-            [ spacing 20, padding 10, centerX ]
+    Element.layout [] <|
+        Element.column
+            [ Element.spacing 20
+            , Element.padding 10
+            , Element.centerX
+            ]
             [ mySlider
                 { label = "Height:"
                 , input = model.height
@@ -132,13 +136,13 @@ view model =
                 , min = 0
                 , max = 90
                 }
-            , html <| logo model
+            , Element.html <| logo model
             ]
 
 
-grey : Color
+grey : Element.Color
 grey =
-    rgb 0.5 0.5 0.5
+    Element.rgb 0.5 0.5 0.5
 
 
 type alias MySliderInput =
@@ -153,18 +157,18 @@ type alias MySliderInput =
 mySlider : MySliderInput -> Element Msg
 mySlider input =
     Input.slider
-        [ behindContent <|
-            el
-                [ width fill
-                , height <| px 2
-                , centerY
+        [ Element.behindContent <|
+            Element.el
+                [ Element.width Element.fill
+                , Element.height <| Element.px 2
+                , Element.centerY
                 , Background.color grey
                 , Border.rounded 2
                 ]
-                none
+                Element.none
         ]
         { onChange = input.msg
-        , label = Input.labelAbove [ Font.color grey ] <| text input.label
+        , label = Input.labelAbove [ Font.color grey ] <| Element.text input.label
         , min = input.min
         , max = input.max
         , value = input.input
@@ -227,33 +231,33 @@ logo model =
             Polygon2d.singleLoop (List.map to2d [ p7, p8, p9 ])
 
         orange =
-            "rgb(240, 173, 0)"
+            Color.rgb255 240 173 0
 
         green =
-            "rgb(127, 209, 59)"
+            Color.rgb255 127 209 59
 
         lightBlue =
-            "rgb(96, 181, 204)"
+            Color.rgb255 96 181 204
 
         darkBlue =
-            "rgb(90, 99, 120)"
+            Color.rgb255 90 99 120
 
         mask id polygon =
             let
                 attributes =
-                    [ Svg.Attributes.fill "white"
-                    , Svg.Attributes.stroke "black"
-                    , Svg.Attributes.strokeWidth "0.03"
+                    [ TypedSvg.Attributes.fill <| Paint Color.white
+                    , TypedSvg.Attributes.stroke <| Paint Color.black
+                    , TypedSvg.Attributes.InPx.strokeWidth 0.03
                     ]
             in
-            Svg.mask [ Svg.Attributes.id id ]
+            Svg.mask [ TypedSvg.Attributes.id id ]
                 [ Svg.polygon2d attributes polygon ]
 
         face color clipPathId polygon =
             let
                 attributes =
-                    [ Svg.Attributes.fill color
-                    , Svg.Attributes.mask ("url(#" ++ clipPathId ++ ")")
+                    [ TypedSvg.Attributes.fill <| Paint color
+                    , TypedSvg.Attributes.mask ("url(#" ++ clipPathId ++ ")")
                     ]
             in
             Svg.polygon2d attributes polygon
@@ -289,7 +293,10 @@ logo model =
             Svg.relativeTo topLeftFrame
                 (Svg.scaleAbout Point2d.origin 200 elements)
     in
-    Svg.svg [ Svg.Attributes.width "500", Svg.Attributes.height "500" ]
+    Svg.svg
+        [ TypedSvg.Attributes.InPx.width 500
+        , TypedSvg.Attributes.InPx.height 500
+        ]
         [ scene ]
 
 
