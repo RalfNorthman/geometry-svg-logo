@@ -15,7 +15,8 @@
             "ianmackenzie/elm-geometry": "3.6.0",
             "ianmackenzie/elm-geometry-svg": "3.0.0",
             "ianmackenzie/elm-units": "2.6.0",
-            "mdgriffith/elm-ui": "1.1.8"
+            "mdgriffith/elm-ui": "1.1.8",
+            "smucode/elm-flat-colors": "1.0.0"
         },
         "indirect": {
             "elm/json": "1.1.3",
