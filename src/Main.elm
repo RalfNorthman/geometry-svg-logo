@@ -3,6 +3,7 @@ module Main exposing (Model, Msg(..), init, main, myPattern, update, view)
 import Angle exposing (Angle)
 import Browser
 import Color
+import Direction2d
 import Element exposing (Element)
 import Element.Background as Background
 import Element.Border as Border
@@ -12,28 +13,30 @@ import FlatColors.IndianPalette as Palette
 import Frame2d
 import Geometry.Svg as Svg
 import Html exposing (Html)
-import Pixels
+import Pixels exposing (Pixels, inPixels, pixels)
 import Point2d
 import Point3d
 import Polygon2d
+import Quantity exposing (Quantity)
 import Rectangle2d
 import Svg exposing (Svg)
 import TypedSvg
 import TypedSvg.Attributes
 import TypedSvg.Attributes.InPx
 import TypedSvg.Types exposing (..)
+import Vector2d
 
 
 type alias Model =
-    { lengthA : Float
-    , lengthB : Float
+    { lengthA : Quantity Float Pixels
+    , lengthB : Quantity Float Pixels
     }
 
 
 init : Model
 init =
-    { lengthA = 40.0
-    , lengthB = 14.0
+    { lengthA = pixels 40.0
+    , lengthB = pixels 14.0
     }
 
 
@@ -47,12 +50,12 @@ update msg model =
     case msg of
         LengthA input ->
             { model
-                | lengthA = input
+                | lengthA = pixels input
             }
 
         LengthB input ->
             { model
-                | lengthB = input
+                | lengthB = pixels input
             }
 
 
@@ -109,7 +112,7 @@ colorB =
 
 type alias MySliderInput =
     { label : String
-    , input : Float
+    , input : Quantity Float Pixels
     , msg : Float -> Msg
     , min : Float
     , max : Float
@@ -133,7 +136,7 @@ mySlider input =
         , label = Input.labelAbove [ Font.color grey ] <| Element.text input.label
         , min = input.min
         , max = input.max
-        , value = input.input
+        , value = inPixels input.input
         , thumb = Input.defaultThumb
         , step = Nothing
         }
@@ -142,42 +145,75 @@ mySlider input =
 myPattern : Model -> Html Msg
 myPattern model =
     let
-        p0 =
-            Point2d.origin
+        sceneWidth =
+            500
 
-        myRect bottomleft side color =
+        square side color =
             Svg.rectangle2d
                 [ TypedSvg.Attributes.fill <| Paint color
                 , TypedSvg.Attributes.stroke <| Paint Color.black
                 , TypedSvg.Attributes.InPx.strokeWidth 1
                 ]
             <|
-                Rectangle2d.from
-                    bottomleft
-                    (Point2d.pixels
-                        (Pixels.inPixels (Point2d.xCoordinate bottomleft) + side)
-                        (Pixels.inPixels (Point2d.yCoordinate bottomleft) + side)
-                    )
+                Rectangle2d.from Point2d.origin (Point2d.xy side side)
 
-        rectA =
-            myRect Point2d.origin model.lengthA colorA
+        rightA =
+            Vector2d.withLength model.lengthA Direction2d.x
 
-        rectB =
-            myRect (Point2d.pixels 0 model.lengthA) model.lengthB colorB
+        upA =
+            Vector2d.perpendicularTo rightA
+
+        upB =
+            Vector2d.withLength model.lengthB Direction2d.y
+
+        leftB =
+            Vector2d.perpendicularTo upB
+
+        squareA =
+            square model.lengthA colorA
+
+        squareB =
+            square model.lengthB colorB
+
+        primitiveUnit =
+            TypedSvg.g []
+                [ squareA
+                , squareB
+                    |> Svg.translateBy rightA
+                ]
+
+        makeRowWithLength : Svg msg -> Int -> List (Svg msg)
+        makeRowWithLength unit n =
+            if n <= 0 then
+                []
+
+            else
+                unit
+                    :: makeRowWithLength
+                        (unit
+                            |> Svg.translateBy rightA
+                            |> Svg.translateBy upB
+                        )
+                        (n - 1)
+
+        rowUnits =
+            ceiling (sceneWidth / inPixels model.lengthA)
 
         elements =
-            TypedSvg.g [] [ rectA, rectB ]
+            TypedSvg.g [] <|
+                makeRowWithLength primitiveUnit
+                    rowUnits
 
         topLeftFrame =
-            Frame2d.atPoint (Point2d.pixels 0 500)
+            Frame2d.atPoint (Point2d.pixels 0 sceneWidth)
                 |> Frame2d.reverseY
 
         scene =
             Svg.relativeTo topLeftFrame elements
     in
     Svg.svg
-        [ TypedSvg.Attributes.InPx.width 500
-        , TypedSvg.Attributes.InPx.height 500
+        [ TypedSvg.Attributes.InPx.width sceneWidth
+        , TypedSvg.Attributes.InPx.height sceneWidth
         ]
         [ scene ]
 
