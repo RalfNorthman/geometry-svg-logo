@@ -158,6 +158,9 @@ myPattern model =
         rightA =
             Vector2d.withLength model.lengthA Direction2d.x
 
+        leftA =
+            Vector2d.withLength model.lengthA Direction2d.negativeX
+
         rightB =
             Vector2d.withLength model.lengthB Direction2d.x
 
@@ -166,6 +169,9 @@ myPattern model =
 
         upB =
             Vector2d.withLength model.lengthB Direction2d.y
+
+        downB =
+            Vector2d.withLength model.lengthB Direction2d.negativeY
 
         leftB =
             Vector2d.perpendicularTo upB
@@ -176,33 +182,59 @@ myPattern model =
         squareB =
             square model.lengthB colorB
 
-        primitiveUnit =
+        neededSquares =
             TypedSvg.g []
                 [ squareA
+                , squareA
+                    |> Svg.translateBy downB
+                    |> Svg.translateBy leftA
+                , squareA
+                    |> Svg.translateBy upA
+                    |> Svg.translateBy leftB
                 , squareB
                     |> Svg.translateBy rightA
+                    |> Svg.translateBy leftB
+                    |> Svg.translateBy upA
+                , squareB
+                    |> Svg.translateBy rightA
+                    |> Svg.translateBy leftB
+                    |> Svg.translateBy leftB
+                    |> Svg.translateBy upA
+                    |> Svg.translateBy upA
+                , squareB
+                    |> Svg.translateBy upA
+                    |> Svg.translateBy downB
+                    |> Svg.translateBy leftB
                 ]
 
+        myAngle =
+            Angle.atan2
+                (Quantity.negate model.lengthB)
+                model.lengthA
+
+        hypotenuse =
+            sqrt
+                ((inPixels model.lengthA ^ 2)
+                    + (inPixels model.lengthB ^ 2)
+                )
+
         defs =
-            let
-                side =
-                    inPixels model.lengthA
-                        + inPixels model.lengthB
-            in
             TypedSvg.defs []
                 [ TypedSvg.pattern
                     [ TypedSvg.Attributes.id "Pattern"
                     , TypedSvg.Attributes.InPx.x 0
                     , TypedSvg.Attributes.InPx.y 0
-                    , TypedSvg.Attributes.InPx.width side
-                    , TypedSvg.Attributes.InPx.height side
+                    , TypedSvg.Attributes.InPx.width hypotenuse
+                    , TypedSvg.Attributes.InPx.height hypotenuse
                     , TypedSvg.Attributes.patternUnits
                         CoordinateSystemUserSpaceOnUse
                     ]
-                    [ primitiveUnit ]
+                    [ neededSquares
+                        |> Svg.rotateAround Point2d.origin myAngle
+                    ]
                 ]
 
-        tile =
+        tiling =
             Svg.rectangle2d
                 [ TypedSvg.Attributes.fill <| Reference "Pattern" ]
             <|
@@ -212,7 +244,7 @@ myPattern model =
         elements =
             TypedSvg.g []
                 [ defs
-                , tile
+                , tiling
                 ]
 
         topLeftFrame =
