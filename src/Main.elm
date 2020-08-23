@@ -68,14 +68,14 @@ view model =
             , Element.centerX
             ]
             [ mySlider
-                { label = "LengthA:"
+                { label = "Side length of green square:"
                 , input = model.lengthA
                 , msg = LengthA
                 , min = 6
                 , max = 60
                 }
             , mySlider
-                { label = "LengthB: "
+                { label = "Side length of purple square:"
                 , input = model.lengthB
                 , msg = LengthB
                 , min = 6
@@ -155,68 +155,53 @@ myPattern model =
             <|
                 Rectangle2d.from Point2d.origin (Point2d.xy side side)
 
-        rightA =
-            Vector2d.withLength model.lengthA Direction2d.x
+        -- The names of these -ish-vectors only makes sense when lengthA is significantly bigger than lengthB
+        rightish =
+            Vector2d.xy model.lengthA model.lengthB
 
-        leftA =
-            Vector2d.withLength model.lengthA Direction2d.negativeX
+        leftish =
+            rightish |> Vector2d.reverse
 
-        rightB =
-            Vector2d.withLength model.lengthB Direction2d.x
-
-        upA =
-            Vector2d.perpendicularTo rightA
-
-        upB =
-            Vector2d.withLength model.lengthB Direction2d.y
-
-        downB =
-            Vector2d.withLength model.lengthB Direction2d.negativeY
-
-        leftB =
-            Vector2d.perpendicularTo upB
+        upish =
+            Vector2d.perpendicularTo rightish
 
         squareA =
             square model.lengthA colorA
 
         squareB =
             square model.lengthB colorB
+                |> Svg.translateBy downB
+
+        downB =
+            Vector2d.withLength model.lengthB Direction2d.negativeY
 
         neededSquares =
             TypedSvg.g []
                 [ squareA
                 , squareA
-                    |> Svg.translateBy downB
-                    |> Svg.translateBy leftA
+                    |> Svg.translateBy leftish
                 , squareA
-                    |> Svg.translateBy upA
-                    |> Svg.translateBy leftB
+                    |> Svg.translateBy upish
                 , squareB
-                    |> Svg.translateBy rightA
-                    |> Svg.translateBy leftB
-                    |> Svg.translateBy upA
+                    |> Svg.translateBy upish
                 , squareB
-                    |> Svg.translateBy rightA
-                    |> Svg.translateBy leftB
-                    |> Svg.translateBy leftB
-                    |> Svg.translateBy upA
-                    |> Svg.translateBy upA
+                    |> Svg.translateBy upish
+                    |> Svg.translateBy rightish
                 , squareB
-                    |> Svg.translateBy upA
-                    |> Svg.translateBy downB
-                    |> Svg.translateBy leftB
+                    |> Svg.translateBy (Vector2d.twice upish)
+                    |> Svg.translateBy rightish
                 ]
 
-        myAngle =
+        negativeAngle =
             Angle.atan2
                 (Quantity.negate model.lengthB)
                 model.lengthA
 
         hypotenuse =
-            sqrt
-                ((inPixels model.lengthA ^ 2)
-                    + (inPixels model.lengthB ^ 2)
-                )
+            Quantity.sqrt <|
+                Quantity.plus
+                    (Quantity.squared model.lengthA)
+                    (Quantity.squared model.lengthB)
 
         defs =
             TypedSvg.defs []
@@ -224,13 +209,13 @@ myPattern model =
                     [ TypedSvg.Attributes.id "Pattern"
                     , TypedSvg.Attributes.InPx.x 0
                     , TypedSvg.Attributes.InPx.y 0
-                    , TypedSvg.Attributes.InPx.width hypotenuse
-                    , TypedSvg.Attributes.InPx.height hypotenuse
+                    , TypedSvg.Attributes.InPx.width <| inPixels hypotenuse
+                    , TypedSvg.Attributes.InPx.height <| inPixels hypotenuse
                     , TypedSvg.Attributes.patternUnits
                         CoordinateSystemUserSpaceOnUse
                     ]
                     [ neededSquares
-                        |> Svg.rotateAround Point2d.origin myAngle
+                        |> Svg.rotateAround Point2d.origin negativeAngle
                     ]
                 ]
 
@@ -245,6 +230,13 @@ myPattern model =
             TypedSvg.g []
                 [ defs
                 , tiling
+                , neededSquares
+                    |> Svg.translateBy rightish
+                    |> Svg.translateBy rightish
+                    |> Svg.translateBy rightish
+                    |> Svg.translateBy rightish
+                    |> Svg.translateBy rightish
+                    |> Svg.translateBy upish
                 ]
 
         topLeftFrame =
