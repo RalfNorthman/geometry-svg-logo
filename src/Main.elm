@@ -81,11 +81,7 @@ view model =
                 , min = 6
                 , max = 60
                 }
-            , Element.el
-                [ Border.width 1
-                , Border.color grey
-                ]
-                (Element.html <| myPattern model)
+            , Element.el [] (Element.html <| myPattern model)
             ]
 
 
@@ -94,6 +90,7 @@ grey =
     Element.rgb 0.5 0.5 0.5
 
 
+colorA : Color.Color
 colorA =
     let
         { red, green, blue } =
@@ -102,6 +99,7 @@ colorA =
     Color.rgb255 red green blue
 
 
+colorB : Color.Color
 colorB =
     let
         { red, green, blue } =
@@ -160,6 +158,9 @@ myPattern model =
         rightA =
             Vector2d.withLength model.lengthA Direction2d.x
 
+        rightB =
+            Vector2d.withLength model.lengthB Direction2d.x
+
         upA =
             Vector2d.perpendicularTo rightA
 
@@ -182,27 +183,37 @@ myPattern model =
                     |> Svg.translateBy rightA
                 ]
 
-        makeRowWithLength : Svg msg -> Int -> List (Svg msg)
-        makeRowWithLength unit n =
-            if n <= 0 then
-                []
+        defs =
+            let
+                side =
+                    inPixels model.lengthA
+                        + inPixels model.lengthB
+            in
+            TypedSvg.defs []
+                [ TypedSvg.pattern
+                    [ TypedSvg.Attributes.id "Pattern"
+                    , TypedSvg.Attributes.InPx.x 0
+                    , TypedSvg.Attributes.InPx.y 0
+                    , TypedSvg.Attributes.InPx.width side
+                    , TypedSvg.Attributes.InPx.height side
+                    , TypedSvg.Attributes.patternUnits
+                        CoordinateSystemUserSpaceOnUse
+                    ]
+                    [ primitiveUnit ]
+                ]
 
-            else
-                unit
-                    :: makeRowWithLength
-                        (unit
-                            |> Svg.translateBy rightA
-                            |> Svg.translateBy upB
-                        )
-                        (n - 1)
-
-        rowUnits =
-            ceiling (sceneWidth / inPixels model.lengthA)
+        tile =
+            Svg.rectangle2d
+                [ TypedSvg.Attributes.fill <| Reference "Pattern" ]
+            <|
+                Rectangle2d.from Point2d.origin
+                    (Point2d.pixels sceneWidth sceneWidth)
 
         elements =
-            TypedSvg.g [] <|
-                makeRowWithLength primitiveUnit
-                    rowUnits
+            TypedSvg.g []
+                [ defs
+                , tile
+                ]
 
         topLeftFrame =
             Frame2d.atPoint (Point2d.pixels 0 sceneWidth)
