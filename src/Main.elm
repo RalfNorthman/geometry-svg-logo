@@ -14,6 +14,7 @@ import Geometry.Svg as Svg
 import Html exposing (Html)
 import Pixels exposing (Pixels, inPixels, pixels)
 import Point2d
+import Polygon2d exposing (Polygon2d)
 import Quantity exposing (Quantity)
 import Rectangle2d
 import Svg exposing (Svg)
@@ -172,6 +173,22 @@ type TopLeftCorner
     = TopLeftCorner
 
 
+polygonMaker firstPoint vectorList =
+    let
+        makePoint head angle =
+            []
+
+        points vecList angle =
+            case vecList of
+                [] ->
+                    []
+
+                head_ :: tail ->
+                    firstPoint :: makePoint head_ angle :: points tail angle
+    in
+    Polygon2d.singleLoop <| points vectorList (Angle.radians 0)
+
+
 myPattern : Model -> Html Msg
 myPattern model =
     let
@@ -179,17 +196,18 @@ myPattern model =
         sceneWidth =
             pixels 500
 
-        mySquare : Quantity Float Pixels -> Color.Color -> Svg msg
-        mySquare side color =
-            Svg.rectangle2d
+        myPolygon : Quantity Float Pixels -> Color.Color -> Svg msg
+        myPolygon color =
+            Svg.polygon2d
                 [ TypedSvg.Attributes.fill <| Paint color
                 , TypedSvg.Attributes.stroke <| Paint Color.black
                 , TypedSvg.Attributes.InPx.strokeWidth 1
                 ]
             <|
-                Rectangle2d.from Point2d.origin (Point2d.xy side side)
+                polygonMaker
+                    Point2d.origin
+                    []
 
-        -- The names of these -ish-vectors only makes sense when lengthA is significantly longer than lengthB (like A > 3B).
         rightish : Vector2d Pixels YUpCoordinates
         rightish =
             Vector2d.xy model.lengthA model.lengthB
@@ -202,52 +220,20 @@ myPattern model =
         upish =
             Vector2d.perpendicularTo rightish
 
-        squareA : Svg msg
-        squareA =
-            mySquare model.lengthA colorA
-
-        squareB : Svg msg
-        squareB =
-            mySquare model.lengthB colorB
-                |> Svg.translateBy downB
+        polygon : Svg msg
+        polygon =
+            myPolygon colorA
 
         downB : Vector2d Pixels YUpCoordinates
         downB =
             Vector2d.withLength model.lengthB Direction2d.negativeY
 
-        -- This is all the geometry needed to fill up a svg "pattern window."
-        neededSquares : Svg msg
-        neededSquares =
-            TypedSvg.g []
-                [ squareA
-                , squareA
-                    |> Svg.translateBy leftish
-                , squareA
-                    |> Svg.translateBy upish
-                , squareB
-                    |> Svg.translateBy upish
-                , squareB
-                    |> Svg.translateBy upish
-                    |> Svg.translateBy rightish
-                , squareB
-                    |> Svg.translateBy (Vector2d.twice upish)
-                    |> Svg.translateBy rightish
-                ]
-
-        -- For clockwise rotation of our neededSquares so they can be seamlessly tiled by svg-pattern (we want neededSquares to line up with the "pattern window" as in the left red square in the picture at https://en.wikipedia.org/wiki/Pythagorean_tiling#Pythagorean_theorem_and_dissections).
-        negativeAngle : Angle
-        negativeAngle =
-            Angle.atan2
-                (Quantity.negate model.lengthB)
-                model.lengthA
-
-        -- Side length of the "pattern window." Pythagorean theorem in the guise of the elm-units package.
-        hypotenuse : Quantity Float Pixels
-        hypotenuse =
+        hypotenuse : Quantity a Pixels -> Quantity a Pixels -> Quantity a Pixels
+        hypotenuse legA legB =
             Quantity.sqrt <|
                 Quantity.plus
-                    (Quantity.squared model.lengthA)
-                    (Quantity.squared model.lengthB)
+                    (Quantity.squared legA)
+                    (Quantity.squared legB)
 
         defs : Svg msg
         defs =
@@ -256,14 +242,12 @@ myPattern model =
                     [ TypedSvg.Attributes.id "Pattern"
                     , TypedSvg.Attributes.InPx.x 0
                     , TypedSvg.Attributes.InPx.y 0
-                    , TypedSvg.Attributes.InPx.width <| inPixels hypotenuse
-                    , TypedSvg.Attributes.InPx.height <| inPixels hypotenuse
+                    , TypedSvg.Attributes.InPx.width <| inPixels 100
+                    , TypedSvg.Attributes.InPx.height <| inPixels 100
                     , TypedSvg.Attributes.patternUnits
                         CoordinateSystemUserSpaceOnUse
                     ]
-                    [ neededSquares
-                        |> Svg.rotateAround Point2d.origin negativeAngle
-                    ]
+                    [ polygon ]
                 ]
 
         tiling : Svg msg
