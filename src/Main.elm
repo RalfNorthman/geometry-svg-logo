@@ -189,7 +189,8 @@ myPattern model =
             <|
                 Rectangle2d.from Point2d.origin (Point2d.xy side side)
 
-        -- The names of these -ish-vectors only makes sense when lengthA is significantly longer than lengthB (like A > 3B).
+        -- The names of these -ish-vectors only makes sense when
+        -- lengthA is significantly longer than lengthB (like A > 3B).
         rightish : Vector2d Pixels YUpCoordinates
         rightish =
             Vector2d.xy model.lengthA model.lengthB
@@ -234,14 +235,19 @@ myPattern model =
                     |> Svg.translateBy rightish
                 ]
 
-        -- For clockwise rotation of our neededSquares so they can be seamlessly tiled by svg-pattern (we want neededSquares to line up with the "pattern window" as in the left red square in the picture at https://en.wikipedia.org/wiki/Pythagorean_tiling#Pythagorean_theorem_and_dissections).
+        -- For clockwise rotation of our neededSquares so they can
+        -- be seamlessly tiled by svg-pattern (we want neededSquares
+        -- to line up with the "pattern window" as in the left red
+        -- square in the picture at
+        -- https://en.wikipedia.org/wiki/Pythagorean_tiling#Pythagorean_theorem_and_dissections).
         negativeAngle : Angle
         negativeAngle =
             Angle.atan2
                 (Quantity.negate model.lengthB)
                 model.lengthA
 
-        -- Side length of the "pattern window." Pythagorean theorem in the guise of the elm-units package.
+        -- Side length of the "pattern window." The pythagorean
+        -- theorem in the guise of the elm-units package.
         hypotenuse : Quantity Float Pixels
         hypotenuse =
             Quantity.sqrt <|
