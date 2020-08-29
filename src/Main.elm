@@ -216,9 +216,9 @@ myPattern model =
         downB =
             Vector2d.withLength model.lengthB Direction2d.negativeY
 
-        -- This is all the geometry needed to fill up a svg "pattern window."
-        neededSquares : Svg msg
-        neededSquares =
+        -- This is all the geometry needed to fill up our svg "pattern window."
+        visibleSquares : Svg msg
+        visibleSquares =
             TypedSvg.g []
                 [ squareA
                 , squareA
@@ -235,8 +235,8 @@ myPattern model =
                     |> Svg.translateBy rightish
                 ]
 
-        -- For clockwise rotation of our neededSquares so they can
-        -- be seamlessly tiled by svg-pattern (we want neededSquares
+        -- For clockwise rotation of our visibleSquares so they can
+        -- be seamlessly tiled by svg-pattern (we want visibleSquares
         -- to line up with the "pattern window" as in the left red
         -- square in the picture at
         -- https://en.wikipedia.org/wiki/Pythagorean_tiling#Pythagorean_theorem_and_dissections).
@@ -255,8 +255,8 @@ myPattern model =
                     (Quantity.squared model.lengthA)
                     (Quantity.squared model.lengthB)
 
-        defs : Svg msg
-        defs =
+        patternDefinition : Svg msg
+        patternDefinition =
             TypedSvg.defs []
                 [ TypedSvg.pattern
                     [ TypedSvg.Attributes.id "Pattern"
@@ -267,13 +267,13 @@ myPattern model =
                     , TypedSvg.Attributes.patternUnits
                         CoordinateSystemUserSpaceOnUse
                     ]
-                    [ neededSquares
+                    [ visibleSquares
                         |> Svg.rotateAround Point2d.origin negativeAngle
                     ]
                 ]
 
-        tiling : Svg msg
-        tiling =
+        patternedArea : Svg msg
+        patternedArea =
             Svg.rectangle2d
                 [ TypedSvg.Attributes.fill <| Reference "Pattern" ]
             <|
@@ -282,7 +282,10 @@ myPattern model =
 
         elements : Svg msg
         elements =
-            TypedSvg.g [] [ defs, tiling ]
+            TypedSvg.g []
+                [ patternDefinition
+                , patternedArea
+                ]
 
         topLeftFrame : Frame2d Pixels YDownCoordinates { defines : TopLeftCorner }
         topLeftFrame =
